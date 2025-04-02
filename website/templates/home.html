@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Home Page{% endblock %}
+
+{% block content %}
+<style>
+    .btn-custom-width {
+        width: 200px; /* Adjust the width as needed */
+        margin: 0 auto; /* Add margin to center the buttons */
+        display: block; /* Make the margin work */
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <img src="{{ url_for('static', filename='images/Cortex Logo.jpg') }}" alt="Logo" class="img-fluid" style="max-width: 200px;">
+        </div>
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-grid gap-2">
+                <a href="/job-dashboard" class="btn btn-secondary btn-custom-width">Job Dashboard</a>
+                <a href="/estimating" class="btn btn-secondary btn-custom-width">Estimating</a>
+                <a href="/job-cost" class="btn btn-secondary btn-custom-width">Job Cost</a>
+                <a href="/purchasing" class="btn btn-secondary btn-custom-width">Purchasing</a>
+                <a href="/progress-claims" class="btn btn-secondary btn-custom-width">Progress Claims</a>
+                <a href="/variations" class="btn btn-secondary btn-custom-width">Variations</a>
+                <a href="/program" class="btn btn-secondary btn-custom-width">Program</a>
+                <a href="/contract-admin" class="btn btn-secondary btn-custom-width">Contract Administration</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

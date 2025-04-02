@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Job Cost{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center"><strong>Job Cost</strong></h1>
+    <hr />
+
+    <!-- Job Selection Form -->
+    <form method="POST" action="{{ url_for('views.job_cost') }}">
+        <div class="mb-3">
+            <label for="job_id" class="form-label">Select Job</label>
+            <select class="form-select" id="job_id" name="job_id" required>
+                <option value="" disabled selected>Select a job</option>
+                {% for job in jobs %}
+                <option value="{{ job.id }}" {% if selected_job and job.id == selected_job.id %}selected{% endif %}>{{ job.job_number }} - {{ job.customer_first_name }} {{ job.customer_last_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Load</button>
+        {% if selected_job %}
+        <a href="{{ url_for('views.estimate_entry_sheet', job_id=selected_job.id) }}" class="btn btn-success">Enter/Edit Estimate</a>
+        <a href="{{ url_for('views.cost_to_complete', job_id=selected_job.id) }}" class="btn btn-info">Update Cost Forecast</a>
+        {% endif %}
+        
+    </form>
+
+    <!-- Cost Items Table -->
+    <h4 class="text-center mt-3"><strong>
+        Cost Report
+        {% if selected_job %}
+        - {{ selected_job.job_number }} - {{ selected_job.customer_first_name }} {{ selected_job.customer_last_name }}
+        {% endif %}
+    </strong></h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Cost Code</th>
+                <th>Description</th>
+                <th>Budget</th>
+                <th>Committed Cost</th>
+                <th>Actual Cost</th>
+                <th>Cost to Complete</th>
+                <th>Forecast at Completion</th>
+                <th>Gain/Loss</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total_budget = 0 %}
+            {% set total_committed_cost = 0 %}
+            {% set total_actual_cost = 0 %}
+            {% set total_cost_to_complete = 0 %}
+            {% set total_forecast_at_completion = 0 %}
+            {% set total_gain_loss = 0 %}
+            {% for item in cost_items %}
+            <tr>
+                <td>{{ item.cost_code }}</td>
+                <td>{{ item.description }}</td>
+                <td>${{ '{:,.2f}'.format(item.budget) }}</td>
+                <td>${{ '{:,.2f}'.format(item.committed_cost) if item.committed_cost else '-' }}</td>
+                <td>${{ '{:,.2f}'.format(item.actual_cost) if item.actual_cost else '-' }}</td>
+                <td>${{ '{:,.2f}'.format(item.cost_to_complete) if item.cost_to_complete else '-' }}</td>
+                <td>${{ '{:,.2f}'.format(item.forecast_at_completion) if item.forecast_at_completion else '-' }}</td>
+                <td {% if item.gain_loss and item.gain_loss < 0 %}style="color:red"{% endif %}>
+                    ${{ '{:,.2f}'.format(item.gain_loss) if item.gain_loss else '-' }}
+                </td>
+            </tr>
+            {% set total_budget = total_budget + item.budget %}
+            {% set total_committed_cost = total_committed_cost + (item.committed_cost or 0) %}
+            {% set total_actual_cost = total_actual_cost + (item.actual_cost or 0) %}
+            {% set total_cost_to_complete = total_cost_to_complete + (item.cost_to_complete or 0) %}
+            {% set total_forecast_at_completion = total_forecast_at_completion + (item.forecast_at_completion or 0) %}
+            {% set total_gain_loss = total_gain_loss + (item.gain_loss or 0) %}
+            {% else %}
+            <tr>
+                <td colspan="8">No cost items found for this job.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="2">Totals</th>
+                <th>${{ '{:,.2f}'.format(total_budget) }}</th>
+                <th>${{ '{:,.2f}'.format(total_committed_cost) }}</th>
+                <th>${{ '{:,.2f}'.format(total_actual_cost) }}</th>
+                <th>${{ '{:,.2f}'.format(total_cost_to_complete) }}</th>
+                <th>${{ '{:,.2f}'.format(total_forecast_at_completion) }}</th>
+                <th {% if total_gain_loss < 0 %}style="color:red"{% endif %}>
+                    ${{ '{:,.2f}'.format(total_gain_loss) }}
+                </th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endblock %}

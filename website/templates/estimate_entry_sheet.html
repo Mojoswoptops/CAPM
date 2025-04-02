@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Estimate Entry Sheet{% endblock %}
+
+{% block content %}
+<div class="container mt-4 pb-5">
+    <h1 class="text-center">Job Cost Update - {{ job.job_number }} - {{ job.customer_first_name }} {{ job.customer_last_name }}</h1>
+    <hr />
+
+    <form method="POST" action="{{ url_for('views.job_cost_estimate', job_id=job.id) }}">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Cost Code</th>
+                    <th>Description</th>
+                    <th>QTY</th>
+                    <th>Unit</th>
+                    <th>Value</th>
+                    <th>Budget</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cost_items %}
+                <tr>
+                    <td><input type="text" class="form-control" name="cost_code_{{ item.id }}" value="{{ item.cost_code }}"></td>
+                    <td><input type="text" class="form-control" name="description_{{ item.id }}" value="{{ item.description }}"></td>
+                    <td><input type="number" class="form-control qty-input" name="qty_{{ item.id }}" value="{{ item.qty }}" step="any" data-item-id="{{ item.id }}"></td>
+                    <td>
+                        <select class="form-control unit-select" name="unit_{{ item.id }}" data-item-id="{{ item.id }}">
+                            <option value="m" {% if item.unit == 'm' %}selected{% endif %}>m</option>
+                            <option value="lm" {% if item.unit == 'lm' %}selected{% endif %}>lm</option>
+                            <option value="m²" {% if item.unit == 'm²' %}selected{% endif %}>m²</option>
+                            <option value="m³" {% if item.unit == 'm³' %}selected{% endif %}>m³</option>
+                            <option value="each" {% if item.unit == 'each' %}selected{% endif %}>each</option>
+                            <option value="kg" {% if item.unit == 'kg' %}selected{% endif %}>kg</option>
+                            <option value="tonne" {% if item.unit == 'tonne' %}selected{% endif %}>tonne</option>
+                        </select>
+                    </td>
+                    <td><input type="number" class="form-control value-input" name="value_{{ item.id }}" value="{{ item.value }}" step="any" data-item-id="{{ item.id }}"></td>
+                    <td><input type="number" class="form-control budget-input" name="budget_{{ item.id }}" value="{{ item.budget }}" step="any" readonly></td>
+                </tr>
+                {% endfor %}
+                <!-- Add 10 empty rows -->
+                {% for i in range(10) %}
+                <tr>
+                    <td><input type="text" class="form-control" name="new_cost_code_{{ i }}"></td>
+                    <td><input type="text" class="form-control" name="new_description_{{ i }}"></td>
+                    <td><input type="number" class="form-control new-qty-input" name="new_qty_{{ i }}" step="any" data-item-id="{{ i }}"></td>
+                    <td>
+                        <select class="form-control new-unit-select" name="new_unit_{{ i }}" data-item-id="{{ i }}">
+                            <option value="m">m</option>
+                            <option value="lm">lm</option>
+                            <option value="m²">m²</option>
+                            <option value="m³">m³</option>
+                            <option value="each">each</option>
+                            <option value="kg">kg</option>
+                            <option value="tonne">tonne</option>
+                        </select>
+                    </td>
+                    <td><input type="number" class="form-control new-value-input" name="new_value_{{ i }}" step="any" data-item-id="{{ i }}"></td>
+                    <td><input type="number" class="form-control new-budget-input" name="new_budget_{{ i }}" step="any" readonly></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="button" class="btn btn-secondary" id="add-row-button">Add Row</button>
+        <input type="hidden" name="new_cost_item_count" value="10">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('views.job_cost') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const table = document.querySelector('.table');
+        const addRowButton = document.querySelector('#add-row-button');
+        let newRowCount = 10; // Start with 10, assuming your initial rows are indexed 0-9
+
+        // Prevent Enter key from submitting the form
+        form.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+            }
+        });
+
+        // Listen for input changes in the table
+        table.addEventListener('input', function(event) {
+            const target = event.target;
+
+            // Check if the input is in a QTY or Value field
+            if (target.classList.contains('qty-input') || target.classList.contains('value-input') || 
+                target.classList.contains('new-qty-input') || target.classList.contains('new-value-input')) {
+                
+                // Find the row containing the input
+                const row = target.closest('tr');
+
+                // Get the QTY and Value input fields in the same row
+                const qtyInput = row.querySelector('.qty-input, .new-qty-input');
+                const valueInput = row.querySelector('.value-input, .new-value-input');
+                const budgetInput = row.querySelector('.budget-input, .new-budget-input');
+
+                // Parse the values and calculate the budget
+                const qty = parseFloat(qtyInput?.value) || 0;
+                const value = parseFloat(valueInput?.value) || 0;
+                const budget = qty * value;
+
+                // Update the budget field
+                if (budgetInput) {
+                    budgetInput.value = budget.toFixed(2);
+                }
+            }
+        });
+
+        // Add a new row when the "Add Row" button is clicked
+        addRowButton.addEventListener('click', function() {
+            // Select the last row in the table
+            const lastRow = table.querySelector('tr:last-child');
+
+            // Clone the last row
+            const newRow = lastRow.cloneNode(true);
+
+            // Clear the values of the input fields in the cloned row
+            const inputFields = newRow.querySelectorAll('input[type="text"], input[type="number"]');
+            inputFields.forEach(input => input.value = '');
+
+            // Update the name attributes of the input fields in the cloned row
+            newRow.querySelectorAll('[name]').forEach(element => {
+                const name = element.getAttribute('name');
+                if (name.startsWith('new_')) {
+                    element.setAttribute('name', name.replace(/_\d+$/, `_${newRowCount}`));
+                }
+            });
+
+            // Update the data-item-id attribute
+            newRow.querySelectorAll('[data-item-id]').forEach(element => {
+                element.dataset.itemId = newRowCount;
+            });
+
+            // Append the cloned row to the table
+            table.appendChild(newRow);
+
+            // Increment the new row count
+            newRowCount++;
+        });
+    });
+</script>
+{% endblock %}

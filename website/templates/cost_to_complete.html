@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Cortex - Cost to Complete{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center">Update Cost Forecast - {{ job.job_number }} - {{ job.customer_first_name }} {{ job.customer_last_name }}</h1>
+    <hr />
+
+    <form method="POST" action="{{ url_for('views.cost_to_complete', job_id=job.id) }}">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Cost Code</th>
+                    <th>Description</th>
+                    <th>Budget</th>
+                    <th>Committed Cost</th>
+                    <th>Actual Cost</th>
+                    <th>Cost to Complete</th>
+                    <th>Forecast at Completion</th>
+                    <th>Gain/Loss</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cost_items %}
+                <tr>
+                    <td>{{ item.cost_code }}</td>
+                    <td>{{ item.description }}</td>
+                    <td>${{ '{:,.2f}'.format(item.budget) }}</td>
+                    <td>${{ '{:,.2f}'.format(item.committed_cost) if item.committed_cost else '-' }}</td>
+                    <td>${{ '{:,.2f}'.format(item.actual_cost) if item.actual_cost else '-' }}</td>
+                    <td><input type="number" class="form-control" name="cost_to_complete_{{ item.id }}" value="{{ item.cost_to_complete }}" step="any"></td>
+                    <td>{{ '{:,.2f}'.format(item.forecast_at_completion) if item.forecast_at_completion else '-' }}</td>
+                    <td {% if item.gain_loss and item.gain_loss < 0 %}style="color:red"{% endif %}>
+                        {{ '{:,.2f}'.format(item.gain_loss) if item.gain_loss else '-' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('views.job_cost') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const costToCompleteInputs = document.querySelectorAll('input[name^="cost_to_complete_"]');
+
+        costToCompleteInputs.forEach(function(input) {
+            input.addEventListener('input', function() {
+                const itemId = input.name.split('_')[3]; // Extract item ID from input name
+                const costToComplete = parseFloat(input.value) || 0; // Get the cost to complete value
+
+                // Get the parent row of the input
+                const row = input.closest('tr');
+
+                // Get other values from the table row, relative to the current row
+                const budget = parseFloat(row.querySelector(`td:nth-child(3)`).textContent.replace(/[$,]/g, '')) || 0;
+                const actualCost = parseFloat(row.querySelector(`td:nth-child(5)`).textContent.replace(/[$,]/g, '')) || 0;
+
+                // Calculate Forecast at Completion and Gain/Loss
+                const forecastAtCompletion = actualCost + costToComplete;
+                const gainLoss = budget - forecastAtCompletion;
+
+                // Update the Forecast at Completion and Gain/Loss columns, relative to the current row
+                row.querySelector(`td:nth-child(7)`).textContent = formatCurrency(forecastAtCompletion);
+                row.querySelector(`td:nth-child(8)`).textContent = formatCurrency(gainLoss);
+
+                // Apply red color if Gain/Loss is negative, relative to the current row
+                const gainLossCell = row.querySelector(`td:nth-child(8)`);
+                if (gainLoss < 0) {
+                    gainLossCell.style.color = 'red';
+                } else {
+                    gainLossCell.style.color = ''; // Reset to default color
+                }
+            });
+        });
+
+        // Helper function to format numbers as currency
+        function formatCurrency(number) {
+            return '$' + number.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+    });
+    </script>
+</div>
+{% endblock %}

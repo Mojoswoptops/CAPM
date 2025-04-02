@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<form method="POST">
+    <h3 align="center">Create Account</h3>
+    
+    <!-- Email Address -->
+    <div class="form-group">
+        <label for="email">Email Address</label>
+        <input 
+            type="email" 
+            class="form-control" 
+            id="email" 
+            name="email" 
+            placeholder="Enter email"
+            required
+            pattern="^[\w\.-]+@[\w\.-]+\.\w+$"
+            title="Please enter a valid email address (e.g., example@domain.com)"
+        />
+    </div>
+
+    <!-- First Name -->
+    <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input 
+            type="text" 
+            class="form-control" 
+            id="firstName" 
+            name="firstName" 
+            placeholder="Enter first name"
+            required
+            pattern="^[A-Za-z]+$"
+            title="First name should only contain alphabetic characters"
+        />
+    </div>
+
+    <!-- Password -->
+    <div class="form-group">
+        <label for="password1">Password</label>
+        <input 
+            type="password" 
+            class="form-control" 
+            id="password1" 
+            name="password1" 
+            placeholder="Enter password"
+            required
+            pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+            title="Password must be at least 8 characters long, include an uppercase letter, a lowercase letter, a number, and a special character"
+        />
+    </div>
+
+    <!-- Confirm Password -->
+    <div class="form-group">
+        <label for="password2">Password (Confirm)</label>
+        <input 
+            type="password" 
+            class="form-control" 
+            id="password2" 
+            name="password2" 
+            placeholder="Confirm password"
+            required
+        />
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Sign Up</button>
+</form>
+{% endblock %}

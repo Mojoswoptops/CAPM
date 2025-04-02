@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Job Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center">Job Dashboard</h1>
+    <hr />
+
+    <!-- Add Job Button -->
+    <div class="text-end mb-3">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addJobModal">Add Job</button>
+    </div>
+
+    <!-- Job Table -->
+    <h3>Jobs</h3>
+    <table class="table table-striped" id="jobs-table">
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>#</th>
+                <th>Job Number</th>
+                <th>Customer Name</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Estimate</th>
+                <th>Budget</th>
+                <th>Stage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr data-job-id="{{ job.id }}">
+                <td>
+                    <input type="radio" name="selectedJob" value="{{ job.id }}" onclick="enableActionButtons()">
+                </td>
+                <td>{{ loop.index }}</td>
+                <td>{{ job.job_number }}</td>
+                <td>{{ job.customer_first_name }} {{ job.customer_last_name }}</td>
+                <td>{{ job.customer_email }}</td>
+                <td>{{ job.address_street }}, {{ job.address_suburb }}, {{ job.address_city }}, {{ job.address_state }}</td>
+                <td>${{ '{:,}'.format(job.estimate) if job.estimate else '{:,}'.format(job.budget) }}</td>
+                <td>${{ '{:,}'.format(job.budget) }}</td>
+                <td>{{ job.stage }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Action Buttons -->
+    <div class="text-end mt-3">
+        <button id="editButton" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editJobModal" onclick="populateEditModal()" disabled>Edit</button>
+        <button id="deleteButton" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteJobModal" onclick="setDeleteJobId()" disabled>Delete</button>
+    </div>
+</div>
+
+<!-- Add Job Modal -->
+<div class="modal fade" id="addJobModal" tabindex="-1" aria-labelledby="addJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('views.job_dashboard') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addJobModalLabel">Add New Job</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="customerFirstName" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="customerFirstName" name="customer_first_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerLastName" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="customerLastName" name="customer_last_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customerEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="customerEmail" name="customer_email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="addressStreet" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="addressStreet" name="address_street" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addressSuburb" class="form-label">Suburb</label>
+                        <input type="text" class="form-control" id="addressSuburb" name="address_suburb" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addressCity" class="form-label">City</label>
+                        <input type="text" class="form-control" id="addressCity" name="address_city" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addressState" class="form-label">State</label>
+                        <input type="text" class="form-control" id="addressState" name="address_state" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addressPostcode" class="form-label">Postcode</label>
+                        <input type="text" class="form-control" id="addressPostcode" name="address_postcode" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="budget" class="form-label">Budget</label>
+                        <select class="form-select" id="budget" name="budget" required>
+                            <option value="" disabled selected>Select a budget</option>
+                            {% for value in range(200000, 1000001, 50000) %}
+                            <option value="{{ value }}">${{ '{:,}'.format(value) }}</option>
+                            {% endfor %}
+                            {% for value in range(1000000, 5000001, 500000) %}
+                            <option value="{{ value }}">${{ '{:,}'.format(value) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="stage" class="form-label">Stage</label>
+                        <select class="form-select" id="stage" name="stage" required>
+                            <option value="Sales">Sales</option>
+                            <option value="Preconstruction">Preconstruction</option>
+                            <option value="Approvals">Approvals</option>
+                            <option value="Earthworks">Earthworks</option>
+                            <option value="Foundations">Foundations</option>
+                            <option value="Structure">Structure</option>
+                            <option value="Roof">Roof</option>
+                            <option value="Lock Up">Lock Up</option>
+                            <option value="Fix Out">Fix Out</option>
+                            <option value="Practical Completion">Practical Completion</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Job</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Job Modal -->
+<div class="modal fade" id="editJobModal" tabindex="-1" aria-labelledby="editJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('views.edit_job') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editJobModalLabel">Edit Job</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editJobId" name="job_id">
+                    <div class="mb-3">
+                        <label for="editCustomerFirstName" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="editCustomerFirstName" name="customer_first_name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCustomerLastName" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="editCustomerLastName" name="customer_last_name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editAddress" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="editAddress" name="address_street">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBudget" class="form-label">Budget</label>
+                        <select class="form-select" id="editBudget" name="budget">
+                            <option value="" disabled selected>Select a budget</option>
+                            {% for value in range(200000, 1000001, 50000) %}
+                            <option value="{{ value }}">${{ '{:,}'.format(value) }}</option>
+                            {% endfor %}
+                            {% for value in range(1000000, 5000001, 500000) %}
+                            <option value="{{ value }}">${{ '{:,}'.format(value) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editStage" class="form-label">Stage</label>
+                        <select class="form-select" id="editStage" name="stage">
+                            <option value="Sales">Sales</option>
+                            <option value="Preconstruction">Preconstruction</option>
+                            <option value="Approvals">Approvals</option>
+                            <option value="Earthworks">Earthworks</option>
+                            <option value="Foundations">Foundations</option>
+                            <option value="Structure">Structure</option>
+                            <option value="Roof">Roof</option>
+                            <option value="Lock Up">Lock Up</option>
+                            <option value="Fix Out">Fix Out</option>
+                            <option value="Practical Completion">Practical Completion</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Delete Job Modal -->
+<div class="modal fade" id="deleteJobModal" tabindex="-1" aria-labelledby="deleteJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('views.delete_job') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteJobModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this job?</p>
+                    <input type="hidden" id="deleteJobId" name="job_id">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function enableActionButtons() {
+        const editButton = document.getElementById('editButton');
+        const deleteButton = document.getElementById('deleteButton');
+        editButton.disabled = false;
+        deleteButton.disabled = false;
+    }
+
+    function populateEditModal() {
+        const selectedJob = document.querySelector('input[name="selectedJob"]:checked');
+        if (selectedJob) {
+            const jobId = selectedJob.value;
+            console.log("Populating edit modal with job ID:", jobId); // Debugging
+            const row = document.querySelector(`tr[data-job-id="${jobId}"]`);
+            document.getElementById('editJobId').value = jobId;
+            document.getElementById('editCustomerFirstName').value = row.querySelector('td:nth-child(4)').textContent.split(' ')[0];
+            document.getElementById('editCustomerLastName').value = row.querySelector('td:nth-child(4)').textContent.split(' ')[1];
+            document.getElementById('editAddress').value = row.querySelector('td:nth-child(6)').textContent.split(',')[0];
+            document.getElementById('editBudget').value = row.querySelector('td:nth-child(8)').textContent.replace('$', '').replace(',', '').trim();
+            document.getElementById('editStage').value = row.querySelector('td:nth-child(9)').textContent.trim();
+        } else {
+            console.log("No job selected for editing."); // Debugging
+        }
+    }
+
+    function setDeleteJobId() {
+        const selectedJob = document.querySelector('input[name="selectedJob"]:checked');
+        if (selectedJob) {
+            const jobId = selectedJob.value;
+            console.log("Setting delete job ID:", jobId); // Debugging
+            document.getElementById('deleteJobId').value = jobId;
+        } else {
+            console.log("No job selected for deletion."); // Debugging
+        }
+    }
+</script>
+{% endblock %}
